@@ -39,6 +39,8 @@
 *.tar
 *.tar.gz
 
+*.xml
+*.bmp
 *.jpg
 *.JPG
 *.png
@@ -50,6 +52,11 @@
 *.pkl
 *.csv
 *.pt
+*.ckpt
+*.hdf5
 *.mat
 
 download_from_drive/
+venv
+.idea
+tb_logs
