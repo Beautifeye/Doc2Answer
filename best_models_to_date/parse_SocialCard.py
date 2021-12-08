@@ -1,27 +1,21 @@
-import sys
-sys.path.append('../stamp_detection/faster_RCNN/')
-sys.path.append('../stamp_detection/')
-from stamp_dataset_class import StampDataset
 import os
-import argparse
-import torch
-import torch.nn as nn
-import pandas as pd
-from torchvision.models.detection.faster_rcnn import FastRCNNPredictor, fasterrcnn_resnet50_fpn
-from engine import evaluate
-import utils
 import shutil
-import transforms as T
-import numpy as np
-import matplotlib.pyplot as plt
-import cv2
-from torchvision import transforms
-import numpy as np
-from tqdm.notebook import tqdm
-import albumentations as A
+import argparse
 import pickle as pkl
+import pandas as pd
+import numpy as np
+import cv2
+import numpy as np
+import albumentations as A
+import torch
+from torch import nn
+from torchvision import transforms
 from torchvision.transforms import ToTensor
-
+from torchvision.models.detection.faster_rcnn import FastRCNNPredictor, fasterrcnn_resnet50_fpn
+from faster_RCNN.stamp_dataset_class import StampDataset
+from faster_RCNN import utils
+from faster_RCNN import transforms as T
+from download_models import download_model
 
 
 ####################################################################################
@@ -65,15 +59,12 @@ def preprocesses(img, boxes, show=False):
         return patches, img_patches
     return patches
 ####################################################################################
+
     
 parser = argparse.ArgumentParser(description='Stamps detection and classification for SocialCard documents')
 parser.add_argument('-i','--input_img',  help='path to the doc to parse', required=True)
 parser.add_argument('-o','--output_dir', help='path to the directory to save all outputs to', required=True)
 args = parser.parse_args()
-# class Args:
-#     input_img = "/home/ubuntu/storage/Doc2Answer/download_from_drive/data/ProcessedCards/ProcessedInnerCards/11826_2b.jpg"
-#     output_dir = "myOutput"
-# args = Args()
 
 # create empty dir to store output files into
 if os.path.isdir(args.output_dir):
@@ -82,7 +73,8 @@ os.mkdir(args.output_dir)
 
 # load stamps detector model
 device = torch.device('cuda') if torch.cuda.is_available() else torch.device('cpu')
-checkpoint_path = '../best_models_to_date/stamp_detection/FasterRCNN-checkpoint.pt'
+download_model("stamp-detector.pt")
+checkpoint_path = os.path.join("models", "stamp-detector.pt")
 model = fasterrcnn_resnet50_fpn(pretrained=True)
 in_features = model.roi_heads.box_predictor.cls_score.in_features
 model.roi_heads.box_predictor = FastRCNNPredictor(in_features, 2)
@@ -93,7 +85,9 @@ print('[INFO] Stamps detector model loaded successfully')
 
 # load stamps siamese network
 siamese_model = Siamese()
-checkpoint = torch.load('stamp_classification/SiameseStampNet-checkpoint.pt', map_location=device)
+download_model("stamp-classifier.pt")
+checkpoint_path = os.path.join("models", "stamp-classifier.pt")
+checkpoint = torch.load(checkpoint_path, map_location=device)
 siamese_model.load_state_dict(checkpoint)
 siamese_model.to(device)
 siamese_model.eval()
